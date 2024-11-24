@@ -24,6 +24,10 @@ function randomChoice(array) {
     return array[getRandomInt(0, array.length)];
 }
 
+function getOneof(a, b) {
+    return Math.random() >= 0.5 ? a : b;
+}
+
 function getNextProbableQPos(curGridConfig, occupiedCols, row) {
     if (curGridConfig.size === 0) {
         return getRandomInt(0, 9);
@@ -37,6 +41,8 @@ function getNextProbableQPos(curGridConfig, occupiedCols, row) {
     }
     return randomChoice(possibleQPos);
 }
+
+const nbrs = [[-1, 0], [0, -1], [0, 1], [1, 0]];
 
 // Create random grid configuration.
 function createRandomGridConfig() {
@@ -53,14 +59,31 @@ function createRandomGridConfig() {
 
     // Compute color map.
     let cGrid = Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => ''));
+    let cGridVisited = Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => false));
     let bfsQ = []
     for (const [r, c] of qGrid) {
         cGrid[r][c] = colors[r];
         bfsQ.push(r*9+c);
     }
-    // while (bfsQ.length > 0) {
-        
-    // }
+    while (bfsQ.length > 0) {
+        let n = bfsQ.length;
+        for (let i = 0; i < n; i++) {
+            let rc = bfsQ.shift();
+            let r = Math.floor(rc/9);
+            let c = rc%9;
+            cGridVisited[r][c] = true;
+            nbrs.forEach(nbr => {
+                let r_ = r + nbr[0];
+                let c_ = c + nbr[1];
+                if (r_ >= 0 && r_ < 9 && c_ >=0 && c_ < 9 && !cGridVisited[r_][c_]) {
+                    if (cGrid[r_][c_] === '') {
+                        bfsQ.push(r_*9+c_);
+                    }
+                    cGrid[r_][c_] = cGrid[r_][c_] === '' ? cGrid[r][c] : getOneof(cGrid[r][c], cGrid[r_][c_]);
+                }
+            });
+        }
+    }
 
     return {
         'qGrid': qGrid,
