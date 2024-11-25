@@ -1,4 +1,8 @@
 const gridContainer = document.getElementById('grid');
+let cellState = new Map();
+Array.from({ length: 9 }, (_, i) => i).forEach(e => {
+    cellState.set(e, new Set());
+});
 
 const colors = [
     'rgba(255, 81, 23, 0.5)',
@@ -11,6 +15,8 @@ const colors = [
     'rgba(177, 123, 28, 0.5)',
     'rgba(45, 12, 33, 0.5)'
 ]
+let qsPerColor = new Map();
+colors.forEach(clr => { qsPerColor[clr] = 0; });
 
 // Get random integer in range [min, max).
 function getRandomInt(min, max) {
@@ -91,8 +97,33 @@ function createRandomGridConfig() {
     };
 }
 
-function validateGrid() {
+function validateGrid(i, j, clr) {
+    if (!cellState.get(i).has(j)) {
+        return true;
+    }
+    // more than 1 Q per color - invalid state
+    if (qsPerColor.get(clr) > 1) {
+        return false;
+    }
+    // more than 1 Q in same - invalid state
+    if (cellState.get(i).size > 1) {
+        return false;
+    }
+    for (let r = 0; r < 9; r++) {
+        // Q in same column in a different row - invalid state
+        if (r != i && cellState.get(i).has(j) && cellState.get(r).has(j)) {
+            return false;
+        }
+        // another Q in X nbr - invalid state
+        if (r != i && Math.abs(r - i) <= 1 && (cellState.get(r).has(j-1) || cellState.get(r).has(j+1))) {
+            return false;
+        }
+    }
     return true;
+}
+
+function checkIfDone() {
+    return false;
 }
 
 function createGrid(gridConfig) {
@@ -101,12 +132,24 @@ function createGrid(gridConfig) {
             const cell = document.createElement('div');
             cell.className = 'cell';
             cell.style.backgroundColor = gridConfig['cGrid'][i][j];
-            if (j === gridConfig['qGrid'].get(i)) {
-                cell.textContent = 'Q';
-            }
             cell.addEventListener('click', () => {
-                cell.textContent = cell.textContent === '' ? 'x' : (cell.textContent === 'x' ? 'Q': '');
-                // cell.style.backgroundColor = cell.style.backgroundColor === 'lightblue' ? '#fff' : 'lightblue';
+                if (cell.textContent === '') {
+                    cell.textContent = 'x';
+                } else if (cell.textContent === 'x') {
+                    cell.textContent = 'Q';
+                    cellState.get(i).add(j);
+                    if (validateGrid(i, j)) {
+                        qsPerColor[gridConfig['cGrid'][i][j]]++;
+                    }
+                } else {
+                    cell.textContent = '';
+                    cellState.get(i).delete(j);
+                    if (validateGrid(i, j) && qsPerColor[gridConfig['cGrid'][i][j]] > 1) {
+                        qsPerColor[gridConfig['cGrid'][i][j]]--;
+                    }
+                }
+                console.log(validateGrid(i, j));
+                checkIfDone();
             });
             gridContainer.appendChild(cell);
         }
