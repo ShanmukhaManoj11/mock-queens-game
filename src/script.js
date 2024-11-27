@@ -16,7 +16,7 @@ const colors = [
     'rgba(45, 12, 33, 0.5)'
 ]
 let qsPerColor = new Map();
-colors.forEach(clr => { qsPerColor[clr] = 0; });
+colors.forEach(clr => { qsPerColor.set(clr, 0); });
 
 // Get random integer in range [min, max).
 function getRandomInt(min, max) {
@@ -133,22 +133,23 @@ function createGrid(gridConfig) {
             cell.className = 'cell';
             cell.style.backgroundColor = gridConfig['cGrid'][i][j];
             cell.addEventListener('click', () => {
+                cell.style.color = 'black'
                 if (cell.textContent === '') {
                     cell.textContent = 'x';
                 } else if (cell.textContent === 'x') {
                     cell.textContent = 'Q';
                     cellState.get(i).add(j);
-                    if (validateGrid(i, j)) {
-                        qsPerColor[gridConfig['cGrid'][i][j]]++;
-                    }
+                    qsPerColor.set(gridConfig['cGrid'][i][j], qsPerColor.get(gridConfig['cGrid'][i][j])+1);
                 } else {
                     cell.textContent = '';
                     cellState.get(i).delete(j);
-                    if (validateGrid(i, j) && qsPerColor[gridConfig['cGrid'][i][j]] > 1) {
-                        qsPerColor[gridConfig['cGrid'][i][j]]--;
+                    if (qsPerColor.get(gridConfig['cGrid'][i][j]) > 0) {
+                        qsPerColor.set(gridConfig['cGrid'][i][j], qsPerColor.get(gridConfig['cGrid'][i][j])-1);
                     }
                 }
-                console.log(validateGrid(i, j));
+                if (!validateGrid(i, j, gridConfig['cGrid'][i][j])) {
+                    cell.style.color = 'red';
+                }
                 checkIfDone();
             });
             gridContainer.appendChild(cell);
